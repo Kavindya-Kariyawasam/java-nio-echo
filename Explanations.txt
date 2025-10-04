@@ -1,0 +1,85 @@
+NIO ECHO SERVER AND CLIENT
+
+- NonBlockingEchoServer.java
+- NonBlockingEchoClient.java
+
+COMPILE & RUN
+---------------------------------
+
+Step 1: Open a terminal in the folder containing the two Java files.
+
+Step 2: Compile the programs:
+    javac NonBlockingEchoServer.java NonBlockingEchoClient.java
+
+Step 3: Run the server first:
+    java NonBlockingEchoServer
+
+    You should see:
+    "Server started on port 5000"
+
+Step 4: In another terminal, run the client:
+    java NonBlockingEchoClient localhost 5000
+
+Step 5: Type any message in the client terminal. 
+        The server will echo the same message back.
+        Example:
+            Client: hello
+            Server echoes back: hello
+
+Step 6: To quit, type:
+    quit
+
+    The client will close the connection.
+
+
+
+EXPLANATION
+---------------------
+
+SERVER
+
+- Uses Java NIO (New I/O) to handle multiple clients in a single thread.
+- The server runs on port 5000.
+- ServerSocketChannel is opened in NON-BLOCKING mode.
+- A Selector is used to listen for different events:
+   - OP_ACCEPT: Accept a new client connection
+   - OP_READ: Read data sent by a client
+- When data is read from a client, it is written back (echoed).
+- If a client disconnects, the channel is closed.
+
+Main flow of the server:
+1. Start server socket and bind to port 5000.
+2. Register with Selector to wait for client connections.
+3. On OP_ACCEPT: Accept new client, set to non-blocking, register for OP_READ.
+4. On OP_READ: Read data from client into ByteBuffer, then echo it back.
+5. If client sends EOF (-1), disconnect that client.
+
+CLIENT
+
+- Connects to the server using SocketChannel in NON-BLOCKING mode.
+- Uses a Selector to manage three events:
+   - OP_CONNECT: Finish the connection process.
+   - OP_READ: Read server responses.
+   - OP_WRITE: Send messages typed by the user.
+- A background thread reads input from the console and queues it for sending.
+- When the user types "quit", the client closes the connection.
+
+Main flow of the client:
+1. Open SocketChannel in non-blocking mode and try connecting to server.
+2. On OP_CONNECT: finish the connection and switch to OP_READ.
+3. On OP_WRITE: send any queued messages from the user.
+4. On OP_READ: receive and print echoed messages from the server.
+5. On "quit", terminate client program.
+
+KEY NIO CONCEPTS
+
+- Channel: abstraction of a network connection (ServerSocketChannel / SocketChannel).
+- Selector: allows one thread to check many channels at once for events.
+- SelectionKey: represents registration of a channel with a selector, with operations like OP_ACCEPT, OP_READ, OP_WRITE.
+- ByteBuffer: memory buffer used for reading/writing data between channels.
+
+WHY NON-BLOCKING
+
+- Unlike traditional blocking I/O, a single thread can handle multiple clients at once.
+- The server does not wait for one client to finish before serving another.
+- More scalable and efficient for concurrent connections.
